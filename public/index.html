@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Downloader</title>
+  <style>
+    body { font-family: sans-serif; background: #667eea; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+    button { width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+    #result { margin-top: 20px; display: none; background: #f0f8ff; padding: 15px; border-radius: 8px; }
+    a { display: inline-block; padding: 12px 24px; background: #2196F3; color: white; text-decoration: none; border-radius: 8px; margin-top: 10px; font-weight: bold; width: 100%; box-sizing: border-box; }
+    .error { color: #d32f2f; font-size: 14px; margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📲 অ্যাপ ডাউনলোডার</h2>
+    <p>ফাইলের সরাসরি লিংক দিন</p>
+    <input type="url" id="urlInput" placeholder="https://example.com/app.apk">
+    <button onclick="checkLink()">লিংক যাচাই করুন</button>
+    <div id="errorMsg" class="error"></div>
+    
+    <div id="result">
+      <p><b>ফাইল সাইজ:</b> <span id="fileSize"></span></p>
+      <a id="downloadBtn" href="#">⬇ ডাউনলোড করুন</a>
+    </div>
+  </div>
+
+  <script>
+    async function checkLink() {
+      const url = document.getElementById('urlInput').value;
+      const errorMsg = document.getElementById('errorMsg');
+      const result = document.getElementById('result');
+      const btn = document.querySelector('button');
+      
+      errorMsg.innerText = '';
+      result.style.display = 'none';
+
+      if (!url || !url.startsWith('http')) {
+        errorMsg.innerText = 'অনুগ্রহ করে সঠিক লিংক দিন (http:// বা https:// দিয়ে শুরু হতে হবে)!';
+        return;
+      }
+
+      btn.innerText = 'যাচাই হচ্ছে...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`/.netlify/functions/download?validate=true&url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error);
+
+        document.getElementById('fileSize').innerText = data.sizeMB + ' MB';
+        document.getElementById('downloadBtn').href = `/.netlify/functions/download?url=${encodeURIComponent(url)}`;
+        result.style.display = 'block';
+        
+      } catch (err) {
+        errorMsg.innerText = err.message || 'লিংকটি কাজ করছে না বা ফাইলটি অনেক বড়।';
+      } finally {
+        btn.innerText = 'লিংক যাচাই করুন';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
